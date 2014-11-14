@@ -17,5 +17,8 @@
 #  limitations under the License.
 ###############################################################################
 
+from .rest import challenge, phase
+
 def load(info):
-    pass
+    info['apiRoot'].challenge = challenge.Challenge()
+    info['apiRoot'].challenge_phase = phase.Phase()

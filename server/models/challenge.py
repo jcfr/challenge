@@ -17,13 +17,25 @@
 #  limitations under the License.
 ###############################################################################
 
+from girder.constants import AccessType
 from girder.models.model_base import AccessControlledModel
 
 
 class Challenge(AccessControlledModel):
     def initialize(self):
         self.name = 'challenge_challenge'
-        self.ensureIndices(('collectionId',))
+        self.ensureIndices(('collectionId', 'name'))
+
+    def list(self, user=None, limit=50, offset=0, sort=None):
+        """
+        List a page of challenges.
+        """
+        cursor = self.find({}, limit=0, sort=sort)
+
+        for r in self.filterResultsByPermission(cursor=cursor, user=user,
+                                                level=AccessType.READ,
+                                                limit=limit, offset=offset):
+            yield r
 
     def validate(self, doc):
         return doc
@@ -48,3 +60,7 @@ class Challenge(AccessControlledModel):
         self.setUserAccess(challenge, user=creator, level=AccessType.ADMIN)
 
         return self.save(challenge)
+
+    def filter(self, challenge, user=None):
+        # TODO filter
+        return challenge

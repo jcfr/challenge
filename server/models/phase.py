@@ -17,13 +17,26 @@
 #  limitations under the License.
 ###############################################################################
 
+from girder.constants import AccessType
 from girder.models.model_base import AccessControlledModel
 
 
 class Phase(AccessControlledModel):
     def initialize(self):
         self.name = 'challenge_phase'
-        self.ensureIndices(('challengeId',))
+        self.ensureIndices(('challengeId', 'name'))
+
+    def list(self, challenge, user=None, limit=50, offset=0, sort=None):
+        """
+        List phases for a challenge.
+        """
+        cursor = self.find(
+            {'challengeId': challenge['_id']}, limit=0, sort=sort)
+
+        for r in self.filterResultsByPermission(cursor=cursor, user=user,
+                                                level=AccessType.READ,
+                                                limit=limit, offset=offset):
+            yield r
 
     def validate(self, doc):
         return doc
@@ -52,3 +65,7 @@ class Phase(AccessControlledModel):
         self.setUserAccess(phase, user=creator, level=AccessType.ADMIN)
 
         return self.save(phase)
+
+    def filter(self, phase, user=None):
+        # TODO filter
+        return phase
