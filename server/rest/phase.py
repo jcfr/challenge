@@ -60,12 +60,22 @@ class Phase(Resource):
     @loadmodel(map={'challengeId': 'challenge'}, level=AccessType.WRITE,
                model='challenge', plugin='challenge')
     def createPhase(self, challenge, params):
+        self.requireParams('name', params)
+
+        user = self.getCurrentUser()
         public = self.boolParam('public', params, default=False)
         description = params.get('description', '').strip()
 
+        participantGroupId = params.get('participantGroupId')
+        if participantGroupId:
+            group = self.model('group').load(
+                participantGroupId, user=user, level=AccessType.READ)
+        else:
+            group = None
+
         phase = self.model('phase', 'challenge').createPhase(
             name=params['name'].strip(), description=description, public=public,
-            creator=self.getCurrentUser(), challenge=challenge)
+            creator=user, challenge=challenge, participantGroup=group)
 
         return phase
     createPhase.description = (
@@ -73,6 +83,10 @@ class Phase(Resource):
         .param('challengeId', 'The ID of the challenge to add the phase to.')
         .param('name', 'The name for this phase.')
         .param('description', 'Description for this phase.', required=False)
+        .param('participantGroupId', 'If you wish to use an existing '
+               'group as the participant group, pass its ID in this parameter.'
+               ' If you omit this, a participant group will be automatically '
+               'created for this phase.', required=False)
         .param('public', 'Whether the phase should be publicly visible.',
                dataType='boolean'))
 
@@ -100,6 +114,10 @@ class Phase(Resource):
         .errorResponse('ID was invalid.')
         .errorResponse('Admin permission denied on the phase.', 403))
 
-    def filter(self, phase, user=None):
-        # TODO filter
-        return phase
+    @access.user
+    @loadmodel(map={'id': 'phase'}, level=AccessType.WRITE,
+               model='phase', plugin='challenge')
+    def updatePhase(self, phase, params):
+        pass
+    updatePhase.description = (
+        Description('Update a challenge phase (TODO).'))
