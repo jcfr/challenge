@@ -66,7 +66,7 @@ class Challenge(Resource):
 
         return challenge
     createChallenge.description = (
-        Description('Add a phase to an existing challenge.')
+        Description('Create a new challenge.')
         .param('name', 'The name for this challenge.')
         .param('description', 'Description for this challenge.', required=False)
         .param('instructions', 'Instructional text for this challenge.',
