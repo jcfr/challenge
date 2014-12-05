@@ -30,6 +30,7 @@ class Challenge(Resource):
         self.resourceName = 'challenge'
 
         self.route('GET', (), self.listChallenges)
+        self.route('GET', (':id',), self.getChallenge)
         self.route('POST', (), self.createChallenge)
         self.route('PUT', (':id', 'access'), self.updateAccess)
 
@@ -97,3 +98,16 @@ class Challenge(Resource):
                dataType='boolean')
         .errorResponse('ID was invalid.')
         .errorResponse('Admin permission denied on the challenge.', 403))
+
+    @access.public
+    @loadmodel(map={'id': 'challenge'}, level=AccessType.READ,
+               model='challenge', plugin='challenge')
+    def getChallenge(self, challenge, params):
+        return self.model('challenge', 'challenge').filter(challenge, self.getCurrentUser())
+    getChallenge.description = (
+        Description('Get a challenge by ID.')
+        .responseClass('Challenge')
+        .param('id', 'The ID of the challenge.', paramType='path')
+        .errorResponse('ID was invalid.')
+        .errorResponse('Read permission denied on the challenge.', 403))
+

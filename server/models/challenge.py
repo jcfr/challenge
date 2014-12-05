@@ -62,5 +62,14 @@ class Challenge(AccessControlledModel):
         return self.save(challenge)
 
     def filter(self, challenge, user=None):
-        # TODO filter
-        return challenge
+        """
+        Filter a challenge document for display to the user.
+        """
+        keys = ['_id', 'creatorId', 'collectionId', 'name', 'description', 'instructrions']
+
+        filtered = self.filterDocument(challenge, allow=keys)
+
+        filtered['_accessLevel'] = self.getAccessLevel(
+            challenge, user)
+
+        return filtered
