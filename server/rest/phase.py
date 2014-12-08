@@ -91,8 +91,7 @@ class Phase(Resource):
                dataType='boolean'))
 
     @access.user
-    @loadmodel(map={'id': 'phase'}, level=AccessType.ADMIN,
-               model='phase', plugin='challenge')
+    @loadmodel(model='phase', plugin='challenge', level=AccessType.ADMIN)
     def updateAccess(self, phase, params):
         self.requireParams('access', params)
 
@@ -115,8 +114,7 @@ class Phase(Resource):
         .errorResponse('Admin permission denied on the phase.', 403))
 
     @access.user
-    @loadmodel(map={'id': 'phase'}, level=AccessType.WRITE,
-               model='phase', plugin='challenge')
+    @loadmodel(model='phase', plugin='challenge', level=AccessType.WRITE)
     def updatePhase(self, phase, params):
         pass
     updatePhase.description = (

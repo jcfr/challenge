@@ -76,8 +76,7 @@ class Challenge(Resource):
                dataType='boolean'))
 
     @access.user
-    @loadmodel(map={'id': 'challenge'}, level=AccessType.ADMIN,
-               model='challenge', plugin='challenge')
+    @loadmodel(model='challenge', plugin='challenge', level=AccessType.ADMIN)
     def updateAccess(self, challenge, params):
         self.requireParams('access', params)
 
