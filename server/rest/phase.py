@@ -30,6 +30,7 @@ class Phase(Resource):
         self.resourceName = 'challenge_phase'
 
         self.route('GET', (), self.listPhases)
+        self.route('GET', (':id',), self.getPhase)
         self.route('POST', (), self.createPhase)
         self.route('PUT', (':id', 'access'), self.updateAccess)
 
@@ -119,3 +120,16 @@ class Phase(Resource):
         pass
     updatePhase.description = (
         Description('Update a challenge phase (TODO).'))
+
+    @access.public
+    @loadmodel(model='phase', plugin='challenge', level=AccessType.READ)
+    def getPhase(self, phase, params):
+        return self.model('phase', 'challenge').filter(
+                          phase, self.getCurrentUser())
+    getPhase.description = (
+        Description('Get a phase by ID.')
+        .responseClass('Phase')
+        .param('id', 'The ID of the phase.', paramType='path')
+        .errorResponse('ID was invalid.')
+        .errorResponse('Read permission denied on the phase.', 403))
+
