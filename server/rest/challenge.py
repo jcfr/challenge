@@ -99,10 +99,10 @@ class Challenge(Resource):
         .errorResponse('Admin permission denied on the challenge.', 403))
 
     @access.public
-    @loadmodel(map={'id': 'challenge'}, level=AccessType.READ,
-               model='challenge', plugin='challenge')
+    @loadmodel(model='challenge', plugin='challenge', level=AccessType.READ)
     def getChallenge(self, challenge, params):
-        return self.model('challenge', 'challenge').filter(challenge, self.getCurrentUser())
+        return self.model('challenge', 'challenge').filter(
+                          challenge, self.getCurrentUser())
     getChallenge.description = (
         Description('Get a challenge by ID.')
         .responseClass('Challenge')

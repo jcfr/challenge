@@ -65,7 +65,8 @@ class Challenge(AccessControlledModel):
         """
         Filter a challenge document for display to the user.
         """
-        keys = ['_id', 'creatorId', 'collectionId', 'name', 'description', 'instructrions']
+        keys = ['_id', 'creatorId', 'collectionId', 'name', 'description',
+                'instructions']
 
         filtered = self.filterDocument(challenge, allow=keys)
 
