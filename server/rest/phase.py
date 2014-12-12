@@ -32,6 +32,7 @@ class Phase(Resource):
         self.route('GET', (), self.listPhases)
         self.route('GET', (':id',), self.getPhase)
         self.route('POST', (), self.createPhase)
+        self.route('POST', (':id', 'participant'), self.joinPhase)
         self.route('PUT', (':id', 'access'), self.updateAccess)
 
     @access.public
@@ -128,6 +129,26 @@ class Phase(Resource):
                           phase, self.getCurrentUser())
     getPhase.description = (
         Description('Get a phase by ID.')
+        .responseClass('Phase')
+        .param('id', 'The ID of the phase.', paramType='path')
+        .errorResponse('ID was invalid.')
+        .errorResponse('Read permission denied on the phase.', 403))
+
+    @access.user
+    @loadmodel(model='phase', plugin='challenge', level=AccessType.READ)
+    def joinPhase(self, phase, params):
+        user = self.getCurrentUser()
+        phase = self.model('phase', 'challenge').filter(
+                           phase, self.getCurrentUser())
+        participantGroupId = phase['participantGroupId']
+        if 'groups' not in user or participantGroupId not in user['groups']:
+            participantGroup = self.model('group').load(
+                participantGroupId, user=user, level=AccessType.READ)
+            self.model('group').addUser(participantGroup, user,
+                                        level=AccessType.READ)
+        return phase
+    joinPhase.description = (
+        Description('Join a phase as a competitor.')
         .responseClass('Phase')
         .param('id', 'The ID of the phase.', paramType='path')
         .errorResponse('ID was invalid.')
