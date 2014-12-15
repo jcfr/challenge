@@ -67,6 +67,7 @@ class Phase(Resource):
         user = self.getCurrentUser()
         public = self.boolParam('public', params, default=False)
         description = params.get('description', '').strip()
+        instructions = params.get('instructions', '').strip()
 
         participantGroupId = params.get('participantGroupId')
         if participantGroupId:
@@ -76,8 +77,9 @@ class Phase(Resource):
             group = None
 
         phase = self.model('phase', 'challenge').createPhase(
-            name=params['name'].strip(), description=description, public=public,
-            creator=user, challenge=challenge, participantGroup=group)
+            name=params['name'].strip(), description=description,
+            instructions=instructions, public=public, creator=user,
+            challenge=challenge, participantGroup=group)
 
         return phase
     createPhase.description = (
@@ -85,6 +87,8 @@ class Phase(Resource):
         .param('challengeId', 'The ID of the challenge to add the phase to.')
         .param('name', 'The name for this phase.')
         .param('description', 'Description for this phase.', required=False)
+        .param('instructions', 'Instructions to participants for this phase.',
+               required=False)
         .param('participantGroupId', 'If you wish to use an existing '
                'group as the participant group, pass its ID in this parameter.'
                ' If you omit this, a participant group will be automatically '
