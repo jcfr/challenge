@@ -46,8 +46,8 @@ class Phase(AccessControlledModel):
         AccessControlledModel.remove(self, phase)
 
     def createPhase(self, name, challenge, creator, description='',
-                    active=False, public=True, participantGroup=None,
-                    groundTruthFolder=None):
+                    instructions='', active=False, public=True,
+                    participantGroup=None, groundTruthFolder=None):
         """
         Create a new phase for a challenge. Will create a top-level folder under
         the challenge's collection. Will also create a new group for the
@@ -70,6 +70,8 @@ class Phase(AccessControlledModel):
         :type active: bool
         :param description: A description for this phase.
         :type description: str
+        :param instructions: Instructions to participants for this phase.
+        :type instructions: str
         :param public: Whether this phase is publicly visible.
         :type public: bool
         :param groundTruthFolder: The folder containing ground truth data
@@ -95,6 +97,7 @@ class Phase(AccessControlledModel):
         phase = {
             'name': name,
             'description': description,
+            'instructions': instructions,
             'active': active,
             'challengeId': challenge['_id'],
             'folderId': folder['_id'],
