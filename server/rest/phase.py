@@ -33,6 +33,7 @@ class Phase(Resource):
         self.route('GET', (':id',), self.getPhase)
         self.route('POST', (), self.createPhase)
         self.route('POST', (':id', 'participant'), self.joinPhase)
+        self.route('PUT', (':id',), self.updatePhase)
         self.route('PUT', (':id', 'access'), self.updateAccess)
 
     @access.public
@@ -66,6 +67,7 @@ class Phase(Resource):
 
         user = self.getCurrentUser()
         public = self.boolParam('public', params, default=False)
+        active = self.boolParam('active', params, default=False)
         description = params.get('description', '').strip()
         instructions = params.get('instructions', '').strip()
 
@@ -78,8 +80,8 @@ class Phase(Resource):
 
         phase = self.model('phase', 'challenge').createPhase(
             name=params['name'].strip(), description=description,
-            instructions=instructions, public=public, creator=user,
-            challenge=challenge, participantGroup=group)
+            instructions=instructions, active=active, public=public,
+            creator=user, challenge=challenge, participantGroup=group)
 
         return phase
     createPhase.description = (
@@ -94,7 +96,10 @@ class Phase(Resource):
                ' If you omit this, a participant group will be automatically '
                'created for this phase.', required=False)
         .param('public', 'Whether the phase should be publicly visible.',
-               dataType='boolean'))
+               dataType='boolean')
+        .param('active',
+            'Whether the phase will accept and score additional submissions.',
+            dataType='boolean', required=False))
 
     @access.user
     @loadmodel(model='phase', plugin='challenge', level=AccessType.ADMIN)
@@ -122,9 +127,40 @@ class Phase(Resource):
     @access.user
     @loadmodel(model='phase', plugin='challenge', level=AccessType.WRITE)
     def updatePhase(self, phase, params):
-        pass
+        phase['public'] = self.boolParam('public', params, phase['public'])
+        phase['active'] = self.boolParam('active', params, phase['active'])
+        phase['name'] = params.get('name', phase['name']).strip()
+        phase['description'] = params.get('description',
+                                          phase.get('description', '')).strip()
+        phase['instructions'] = params.get('instructions',
+                                           phase.get('instructions', '')).strip()
+        if 'participantGroupId' in params:
+            participantGroupId = params['participantGroupId'].strip()
+            # load the group to validate
+            user = self.getCurrentUser()
+            self.model('group').load(
+                participantGroupId, user=user, level=AccessType.READ)
+            phase['participantGroupId'] = participantGroupId
+
+        self.model('phase', 'challenge').updatePhase(phase)
+        return phase
     updatePhase.description = (
-        Description('Update a challenge phase (TODO).'))
+        Description('Update the properties of a challenge phase.')
+        .responseClass('Phase')
+        .param('id', 'The ID of the phase.', paramType='path')
+        .param('name', 'The name for this phase.', required=False)
+        .param('description', 'Description for this phase.', required=False)
+        .param('instructions', 'Instructions to participants for this phase.',
+               required=False)
+        .param('participantGroupId', 'ID of an existing group to set as the '
+               'participant group for this phase.', required=False)
+        .param('active',
+            'Whether the phase will accept and score additional submissions.',
+            dataType='boolean', required=False)
+        .param('public', 'Whether the phase should be publicly visible.',
+               dataType='boolean', required=False)
+        .errorResponse('ID was invalid.')
+        .errorResponse('Write permission denied on the phase.', 403))
 
     @access.public
     @loadmodel(model='phase', plugin='challenge', level=AccessType.READ)
