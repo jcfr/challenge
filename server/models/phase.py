@@ -17,6 +17,8 @@
 #  limitations under the License.
 ###############################################################################
 
+import datetime
+
 from girder.constants import AccessType
 from girder.models.model_base import AccessControlledModel
 
@@ -109,6 +111,18 @@ class Phase(AccessControlledModel):
         self.setUserAccess(phase, user=creator, level=AccessType.ADMIN)
         self.setGroupAccess(phase, participantGroup, level=AccessType.READ)
 
+        return self.save(phase)
+
+    def updatePhase(self, phase):
+        """
+        Updates a phase.
+        :param phase: The phase document to update
+        :type phase: dict
+        :returns: The phase document that was edited.
+        """
+        phase['updated'] = datetime.datetime.utcnow()
+
+        # Validate and save the phase
         return self.save(phase)
 
     def filter(self, phase, user=None):
