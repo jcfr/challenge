@@ -127,7 +127,6 @@ class Phase(Resource):
     @access.user
     @loadmodel(model='phase', plugin='challenge', level=AccessType.WRITE)
     def updatePhase(self, phase, params):
-        phase['public'] = self.boolParam('public', params, phase['public'])
         phase['active'] = self.boolParam('active', params, phase['active'])
         phase['name'] = params.get('name', phase['name']).strip()
         phase['description'] = params.get('description',
@@ -157,8 +156,6 @@ class Phase(Resource):
         .param('active',
             'Whether the phase will accept and score additional submissions.',
             dataType='boolean', required=False)
-        .param('public', 'Whether the phase should be publicly visible.',
-               dataType='boolean', required=False)
         .errorResponse('ID was invalid.')
         .errorResponse('Write permission denied on the phase.', 403))
 
@@ -193,4 +190,3 @@ class Phase(Resource):
         .param('id', 'The ID of the phase.', paramType='path')
         .errorResponse('ID was invalid.')
         .errorResponse('Read permission denied on the phase.', 403))
-
