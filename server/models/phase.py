@@ -20,7 +20,7 @@
 import datetime
 
 from girder.constants import AccessType
-from girder.models.model_base import AccessControlledModel
+from girder.models.model_base import AccessControlledModel, ValidationException
 
 
 class Phase(AccessControlledModel):
@@ -41,6 +41,9 @@ class Phase(AccessControlledModel):
             yield r
 
     def validate(self, doc):
+        if not doc.get('name'):
+            raise ValidationException('Phase name must not be empty.',
+                                      field='name')
         return doc
 
     def remove(self, phase):
