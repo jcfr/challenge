@@ -104,7 +104,8 @@ class Phase(AccessControlledModel):
             'challengeId': challenge['_id'],
             'folderId': folder['_id'],
             'participantGroupId': participantGroup['_id'],
-            'groundTruthFolderId': groundTruthFolder['_id']
+            'groundTruthFolderId': groundTruthFolder['_id'],
+            'created': datetime.datetime.now()
         }
 
         self.setPublic(phase, public=public)
@@ -126,5 +127,11 @@ class Phase(AccessControlledModel):
         return self.save(phase)
 
     def filter(self, phase, user=None):
-        # TODO filter
-        return phase
+        keys = ['_id', 'name', 'public', 'description', 'created', 'updated',
+                'active', 'challengeId', 'folderId', 'participantGroupId',
+                'groundTruthFolderId', 'instructions']
+
+        filtered = self.filterDocument(phase, allow=keys)
+        filtered['_accessLevel'] = self.getAccessLevel(phase, user)
+
+        return filtered
