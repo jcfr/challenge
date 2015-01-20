@@ -31,6 +31,7 @@ class Phase(Resource):
 
         self.route('GET', (), self.listPhases)
         self.route('GET', (':id',), self.getPhase)
+        self.route('GET', (':id', 'access'), self.getAccess)
         self.route('POST', (), self.createPhase)
         self.route('POST', (':id', 'participant'), self.joinPhase)
         self.route('PUT', (':id',), self.updatePhase)
@@ -103,6 +104,16 @@ class Phase(Resource):
 
     @access.user
     @loadmodel(model='phase', plugin='challenge', level=AccessType.ADMIN)
+    def getAccess(self, phase, params):
+        return self.model('phase', 'challenge').getFullAccessList(phase)
+    getAccess.description = (
+        Description('Get the access control list for a phase.')
+        .param('id', 'The ID of the phase.', paramType='path')
+        .errorResponse('ID was invalid.')
+        .errorResponse('Admin access was denied for the phase.', 403))
+
+    @access.user
+    @loadmodel(model='phase', plugin='challenge', level=AccessType.ADMIN)
     def updateAccess(self, phase, params):
         self.requireParams('access', params)
 
@@ -131,8 +142,8 @@ class Phase(Resource):
         phase['name'] = params.get('name', phase['name']).strip()
         phase['description'] = params.get('description',
                                           phase.get('description', '')).strip()
-        phase['instructions'] = params.get('instructions',
-                                           phase.get('instructions', '')).strip()
+        phase['instructions'] = params.get(
+            'instructions', phase.get('instructions', '')).strip()
         if 'participantGroupId' in params:
             participantGroupId = params['participantGroupId'].strip()
             # load the group to validate
