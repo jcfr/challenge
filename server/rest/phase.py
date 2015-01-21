@@ -145,12 +145,11 @@ class Phase(Resource):
         phase['instructions'] = params.get(
             'instructions', phase.get('instructions', '')).strip()
         if 'participantGroupId' in params:
-            participantGroupId = params['participantGroupId'].strip()
-            # load the group to validate
             user = self.getCurrentUser()
-            self.model('group').load(
-                participantGroupId, user=user, level=AccessType.READ)
-            phase['participantGroupId'] = participantGroupId
+            group = self.model('group').load(
+                params['participantGroupId'],
+                user=user, level=AccessType.READ, exc=True)
+            phase['participantGroupId'] = group['_id']
 
         self.model('phase', 'challenge').updatePhase(phase)
         return phase
