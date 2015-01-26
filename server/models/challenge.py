@@ -27,6 +27,10 @@ class Challenge(AccessControlledModel):
     def initialize(self):
         self.name = 'challenge_challenge'
         self.ensureIndices(('collectionId', 'name'))
+        self.ensureTextIndex({
+            'name': 10,
+            'description': 1
+        })
 
     def list(self, user=None, limit=50, offset=0, sort=None):
         """
