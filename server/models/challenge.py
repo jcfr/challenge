@@ -17,6 +17,8 @@
 #  limitations under the License.
 ###############################################################################
 
+import datetime
+
 from girder.constants import AccessType
 from girder.models.model_base import AccessControlledModel
 
@@ -38,6 +40,27 @@ class Challenge(AccessControlledModel):
             yield r
 
     def validate(self, doc):
+        doc['name'] = doc['name'].strip()
+        if doc.get('description'):
+            doc['description'] = doc['description'].strip()
+        if doc.get('instructions'):
+            doc['instructions'] = doc['instructions'].strip()
+
+        if not doc['name']:
+            raise ValidationException(
+                'Challenge name must not be empty.', 'name')
+
+        # Ensure unique name for the collection
+        q = {
+            'name': doc['name']
+        }
+        if '_id' in doc:
+            q['_id'] = {'$ne': doc['_id']}
+        duplicate = self.findOne(q, fields=['_id'])
+        if duplicate is not None:
+            raise ValidationException('A challenge with that name already '
+                                      'exists.', 'name')
+
         return doc
 
     def remove(self, challenge):
@@ -46,14 +69,20 @@ class Challenge(AccessControlledModel):
 
     def createChallenge(self, name, creator, description='', instructions='',
                         public=True):
-        collection = self.model('collection').createCollection(
-            name, creator=creator, public=public)
+        collection = self.model('collection').findOne({
+            'name': name
+        })
+
+        if collection is None:
+            collection = self.model('collection').createCollection(
+                name, creator=creator, public=public)
         challenge = {
             'name': name,
             'creatorId': creator['_id'],
             'collectionId': collection['_id'],
             'description': description,
-            'instructions': instructions
+            'instructions': instructions,
+            'created': datetime.datetime.now()
         }
 
         self.setPublic(challenge, public=public)
