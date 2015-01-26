@@ -98,8 +98,6 @@ class Challenge(AccessControlledModel):
                 'instructions']
 
         filtered = self.filterDocument(challenge, allow=keys)
-
-        filtered['_accessLevel'] = self.getAccessLevel(
-            challenge, user)
+        filtered['_accessLevel'] = self.getAccessLevel(challenge, user)
 
         return filtered
