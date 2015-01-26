@@ -18,7 +18,23 @@
 ###############################################################################
 
 from .rest import challenge, phase
+from girder import events
+from girder.api import rest
+from girder.utility.model_importer import ModelImporter
+
+
+def searchModels(event):
+
+    if 'challenge_challenge' in event.info['params']['types']:
+        user = rest.getCurrentUser()
+        event.info['returnVal']['challenge_challenge'] = [
+            ModelImporter.model('challenge', 'challenge').filter(c) for c in
+            ModelImporter.model('challenge', 'challenge').textSearch(
+                event.info['params']['q'], user=user)
+        ]
+
 
 def load(info):
+    events.bind('rest.get.resource/search.after', 'challenge', searchModels)
     info['apiRoot'].challenge = challenge.Challenge()
     info['apiRoot'].challenge_phase = phase.Phase()
