@@ -31,7 +31,9 @@ class Challenge(Resource):
 
         self.route('GET', (), self.listChallenges)
         self.route('GET', (':id',), self.getChallenge)
+        self.route('GET', (':id', 'access'), self.getAccess)
         self.route('POST', (), self.createChallenge)
+        self.route('PUT', (':id',), self.updateChallenge)
         self.route('PUT', (':id', 'access'), self.updateAccess)
 
     @access.public
@@ -76,6 +78,27 @@ class Challenge(Resource):
                dataType='boolean'))
 
     @access.user
+    @loadmodel(model='challenge', plugin='challenge', level=AccessType.WRITE)
+    def updateChallenge(self, challenge, params):
+        challenge['name'] = params.get('name', challenge['name']).strip()
+        challenge['description'] = params.get(
+            'description', challenge.get('description', '')).strip()
+        challenge['instructions'] = params.get(
+            'instructions', challenge.get('instructions', '')).strip()
+
+        self.model('challenge', 'challenge').save(challenge)
+        return challenge
+    updateChallenge.description = (
+        Description('Update the properties of a challenge.')
+        .param('id', 'The ID of the challenge.', paramType='path')
+        .param('name', 'The name for this challenge.', required=False)
+        .param('description', 'Description for this challenge.', required=False)
+        .param('instructions', 'Instructions to participants for this '
+               'challenge.', required=False)
+        .errorResponse('ID was invalid.')
+        .errorResponse('Write permission denied on the challenge.', 403))
+
+    @access.user
     @loadmodel(model='challenge', plugin='challenge', level=AccessType.ADMIN)
     def updateAccess(self, challenge, params):
         self.requireParams('access', params)
@@ -110,3 +133,12 @@ class Challenge(Resource):
         .errorResponse('ID was invalid.')
         .errorResponse('Read permission denied on the challenge.', 403))
 
+    @access.user
+    @loadmodel(model='challenge', plugin='challenge', level=AccessType.ADMIN)
+    def getAccess(self, challenge, params):
+        return self.model('challenge', 'challenge').getFullAccessList(challenge)
+    getAccess.description = (
+        Description('Get the access control list for a challenge.')
+        .param('id', 'The ID of the phase.', paramType='path')
+        .errorResponse('ID was invalid.')
+        .errorResponse('Admin access was denied for the challenge.', 403))

@@ -85,19 +85,22 @@ class Phase(AccessControlledModel):
         """
         collection = self.model('collection').load(challenge['collectionId'],
                                                    force=True)
+
         folder = self.model('folder').createFolder(
             collection, name, parentType='collection', public=public,
-            creator=creator)
+            creator=creator, allowRename=True)
 
         if groundTruthFolder is None:
             groundTruthFolder = self.model('folder').createFolder(
                 folder, 'Ground truth', parentType='folder', public=False,
-                creator=creator)
+                creator=creator, allowRename=True)
 
         if participantGroup is None:
             groupName = '{} {} participants'.format(challenge['name'], name)
-            participantGroup = self.model('group').createGroup(
-                groupName, creator, public=public)
+            participantGroup = self.model('group').findOne({'name': groupName})
+            if participantGroup is None:
+                participantGroup = self.model('group').createGroup(
+                    groupName, creator, public=public)
 
         phase = {
             'name': name,
