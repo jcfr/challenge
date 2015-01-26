@@ -31,6 +31,7 @@ class Challenge(Resource):
 
         self.route('GET', (), self.listChallenges)
         self.route('GET', (':id',), self.getChallenge)
+        self.route('GET', (':id', 'access'), self.getAccess)
         self.route('POST', (), self.createChallenge)
         self.route('PUT', (':id',), self.updateChallenge)
         self.route('PUT', (':id', 'access'), self.updateAccess)
@@ -131,3 +132,13 @@ class Challenge(Resource):
         .param('id', 'The ID of the challenge.', paramType='path')
         .errorResponse('ID was invalid.')
         .errorResponse('Read permission denied on the challenge.', 403))
+
+    @access.user
+    @loadmodel(model='challenge', plugin='challenge', level=AccessType.ADMIN)
+    def getAccess(self, challenge, params):
+        return self.model('challenge', 'challenge').getFullAccessList(challenge)
+    getAccess.description = (
+        Description('Get the access control list for a challenge.')
+        .param('id', 'The ID of the phase.', paramType='path')
+        .errorResponse('ID was invalid.')
+        .errorResponse('Admin access was denied for the challenge.', 403))
