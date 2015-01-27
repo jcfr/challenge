@@ -21,6 +21,7 @@ import datetime
 
 from girder.constants import AccessType
 from girder.models.model_base import AccessControlledModel, ValidationException
+from girder.utility.progress import noProgress
 
 
 class Phase(AccessControlledModel):
@@ -46,9 +47,13 @@ class Phase(AccessControlledModel):
                                       field='name')
         return doc
 
-    def remove(self, phase):
-        # TODO remove all submissions, etc
-        AccessControlledModel.remove(self, phase)
+    def subtreeCount(self, phase):
+        # TODO if we refactor to move submission into challenge, count them here
+        return 1
+
+    def remove(self, phase, progress=noProgress):
+        AccessControlledModel.remove(self, phase, progress=progress)
+        progress.update(increment=1, message='Deleted phase ' + phase['name'])
 
     def createPhase(self, name, challenge, creator, description='',
                     instructions='', active=False, public=True,

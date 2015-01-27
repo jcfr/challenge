@@ -20,7 +20,8 @@
 import datetime
 
 from girder.constants import AccessType
-from girder.models.model_base import AccessControlledModel
+from girder.models.model_base import AccessControlledModel, ValidationException
+from girder.utility.progress import noProgress
 
 
 class Challenge(AccessControlledModel):
@@ -42,6 +43,21 @@ class Challenge(AccessControlledModel):
                                                 level=AccessType.READ,
                                                 limit=limit, offset=offset):
             yield r
+
+    def subtreeCount(self, challenge):
+        """
+        Count up the recursive size of the challenge. This sums the size of
+        each individual phase, then adds 1 for the challenge itself.
+        """
+        count = 1
+
+        phases = self.model('phase', 'challenge').find({
+            'challengeId': challenge['_id']
+        }, fields=(), limit=0)
+        for phase in phases:
+            count += self.model('phase', 'challenge').subtreeCount(phase)
+
+        return count
 
     def validate(self, doc):
         doc['name'] = doc['name'].strip()
@@ -67,9 +83,19 @@ class Challenge(AccessControlledModel):
 
         return doc
 
-    def remove(self, challenge):
-        # TODO remove all phases
+    def remove(self, challenge, progress=noProgress):
+        # Remove all phases for this challenge
+        phases = self.model('phase', 'challenge').find({
+            'challengeId': challenge['_id']
+        }, limit=0, timeout=False)
+        for phase in phases:
+            self.model('phase', 'challenge').remove(phase, progress=progress)
+        phases.close()
+
         AccessControlledModel.remove(self, challenge)
+
+        progress.update(increment=1,
+                        message='Deleted challenge ' + challenge['name'])
 
     def createChallenge(self, name, creator, description='', instructions='',
                         public=True):

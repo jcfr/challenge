@@ -21,8 +21,9 @@ import json
 
 from girder.api import access
 from girder.api.describe import Description
-from girder.api.rest import Resource, loadmodel
+from girder.api.rest import Resource, loadmodel, RestException
 from girder.constants import AccessType
+from girder.utility.progress import ProgressContext
 
 
 class Phase(Resource):
@@ -36,6 +37,7 @@ class Phase(Resource):
         self.route('POST', (':id', 'participant'), self.joinPhase)
         self.route('PUT', (':id',), self.updatePhase)
         self.route('PUT', (':id', 'access'), self.updateAccess)
+        self.route('DELETE', (':id',), self.deletePhase)
 
     @access.public
     @loadmodel(map={'challengeId': 'challenge'}, model='challenge',
@@ -98,9 +100,8 @@ class Phase(Resource):
                'created for this phase.', required=False)
         .param('public', 'Whether the phase should be publicly visible.',
                dataType='boolean')
-        .param('active',
-            'Whether the phase will accept and score additional submissions.',
-            dataType='boolean', required=False))
+        .param('active', 'Whether the phase will accept and score additional '
+               'submissions.', dataType='boolean', required=False))
 
     @access.user
     @loadmodel(model='phase', plugin='challenge', level=AccessType.ADMIN)
@@ -163,9 +164,9 @@ class Phase(Resource):
                required=False)
         .param('participantGroupId', 'ID of an existing group to set as the '
                'participant group for this phase.', required=False)
-        .param('active',
-            'Whether the phase will accept and score additional submissions.',
-            dataType='boolean', required=False)
+        .param(
+            'active', 'Whether the phase will accept and score additional '
+            'submissions.', dataType='boolean', required=False)
         .errorResponse('ID was invalid.')
         .errorResponse('Write permission denied on the phase.', 403))
 
@@ -173,7 +174,7 @@ class Phase(Resource):
     @loadmodel(model='phase', plugin='challenge', level=AccessType.READ)
     def getPhase(self, phase, params):
         return self.model('phase', 'challenge').filter(
-                          phase, self.getCurrentUser())
+            phase, self.getCurrentUser())
     getPhase.description = (
         Description('Get a phase by ID.')
         .responseClass('Phase')
@@ -186,7 +187,7 @@ class Phase(Resource):
     def joinPhase(self, phase, params):
         user = self.getCurrentUser()
         phase = self.model('phase', 'challenge').filter(
-                           phase, self.getCurrentUser())
+            phase, self.getCurrentUser())
         participantGroupId = phase['participantGroupId']
         if 'groups' not in user or participantGroupId not in user['groups']:
             participantGroup = self.model('group').load(
@@ -200,3 +201,23 @@ class Phase(Resource):
         .param('id', 'The ID of the phase.', paramType='path')
         .errorResponse('ID was invalid.')
         .errorResponse('Read permission denied on the phase.', 403))
+
+    @access.user
+    @loadmodel(model='phase', plugin='challenge', level=AccessType.ADMIN)
+    def deletePhase(self, phase, params):
+        progress = self.boolParam('progress', params, default=False)
+        with ProgressContext(progress, user=self.getCurrentUser(),
+                             title=u'Deleting phase ' + phase['name'],
+                             message='Calculating total size...') as ctx:
+            if progress:
+                ctx.update(
+                    total=self.model('phase', 'challenge').subtreeCount(phase))
+            self.model('phase', 'challenge').remove(phase, progress=ctx)
+        return {'message': 'Deleted phase %s.' % phase['name']}
+    deletePhase.description = (
+        Description('Delete a phase.')
+        .param('id', 'The ID of the phase to delete.', paramType='path')
+        .param('progress', 'Whether to record progress on this task. Default '
+               'is false.', required=False, dataType='boolean')
+        .errorResponse('ID was invalid.')
+        .errorResponse('Admin access was denied for the phase.', 403))

@@ -21,8 +21,9 @@ import json
 
 from girder.api import access
 from girder.api.describe import Description
-from girder.api.rest import Resource, loadmodel
+from girder.api.rest import Resource, loadmodel, RestException
 from girder.constants import AccessType
+from girder.utility.progress import ProgressContext
 
 
 class Challenge(Resource):
@@ -35,6 +36,7 @@ class Challenge(Resource):
         self.route('POST', (), self.createChallenge)
         self.route('PUT', (':id',), self.updateChallenge)
         self.route('PUT', (':id', 'access'), self.updateAccess)
+        self.route('DELETE', (':id',), self.deleteChallenge)
 
     @access.public
     def listChallenges(self, params):
@@ -125,7 +127,7 @@ class Challenge(Resource):
     @loadmodel(model='challenge', plugin='challenge', level=AccessType.READ)
     def getChallenge(self, challenge, params):
         return self.model('challenge', 'challenge').filter(
-                          challenge, self.getCurrentUser())
+            challenge, self.getCurrentUser())
     getChallenge.description = (
         Description('Get a challenge by ID.')
         .responseClass('Challenge')
@@ -140,5 +142,26 @@ class Challenge(Resource):
     getAccess.description = (
         Description('Get the access control list for a challenge.')
         .param('id', 'The ID of the phase.', paramType='path')
+        .errorResponse('ID was invalid.')
+        .errorResponse('Admin access was denied for the challenge.', 403))
+
+    @access.user
+    @loadmodel(model='challenge', plugin='challenge', level=AccessType.ADMIN)
+    def deleteChallenge(self, challenge, params):
+        progress = self.boolParam('progress', params, default=False)
+        with ProgressContext(progress, user=self.getCurrentUser(),
+                             title=u'Deleting challenge ' + challenge['name'],
+                             message='Calculating total size...') as ctx:
+            if progress:
+                ctx.update(
+                    total=self.model('challenge', 'challenge').subtreeCount(
+                        challenge))
+            self.model('challenge', 'challenge').remove(challenge, progress=ctx)
+        return {'message': 'Deleted challenge %s.' % challenge['name']}
+    deleteChallenge.description = (
+        Description('Delete a challenge.')
+        .param('id', 'The ID of the challenge to delete.', paramType='path')
+        .param('progress', 'Whether to record progress on this task. Default '
+               'is false.', required=False, dataType='boolean')
         .errorResponse('ID was invalid.')
         .errorResponse('Admin access was denied for the challenge.', 403))
