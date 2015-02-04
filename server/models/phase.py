@@ -116,7 +116,7 @@ class Phase(AccessControlledModel):
             'folderId': folder['_id'],
             'participantGroupId': participantGroup['_id'],
             'groundTruthFolderId': groundTruthFolder['_id'],
-            'created': datetime.datetime.now()
+            'created': datetime.datetime.utcnow()
         }
 
         self.setPublic(phase, public=public)

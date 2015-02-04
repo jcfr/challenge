@@ -112,7 +112,7 @@ class Challenge(AccessControlledModel):
             'collectionId': collection['_id'],
             'description': description,
             'instructions': instructions,
-            'created': datetime.datetime.now()
+            'created': datetime.datetime.utcnow()
         }
 
         self.setPublic(challenge, public=public)
