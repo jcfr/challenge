@@ -33,6 +33,10 @@ class Challenge(AccessControlledModel):
             'description': 1
         })
 
+        self.exposeFields(level=AccessType.READ, fields=(
+            '_id', 'creatorId', 'collectionId', 'name', 'description',
+            'instructions'))
+
     def list(self, user=None, limit=50, offset=0, sort=None):
         """
         List a page of challenges.
@@ -119,15 +123,3 @@ class Challenge(AccessControlledModel):
         self.setUserAccess(challenge, user=creator, level=AccessType.ADMIN)
 
         return self.save(challenge)
-
-    def filter(self, challenge, user=None):
-        """
-        Filter a challenge document for display to the user.
-        """
-        keys = ['_id', 'creatorId', 'collectionId', 'name', 'description',
-                'instructions']
-
-        filtered = self.filterDocument(challenge, allow=keys)
-        filtered['_accessLevel'] = self.getAccessLevel(challenge, user)
-
-        return filtered
