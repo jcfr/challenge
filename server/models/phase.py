@@ -29,6 +29,11 @@ class Phase(AccessControlledModel):
         self.name = 'challenge_phase'
         self.ensureIndices(('challengeId', 'name'))
 
+        self.exposeFields(level=AccessType.READ, fields=(
+            '_id', 'name', 'public', 'description', 'created', 'updated',
+            'active', 'challengeId', 'folderId', 'participantGroupId',
+            'groundTruthFolderId', 'instructions'))
+
     def list(self, challenge, user=None, limit=50, offset=0, sort=None):
         """
         List phases for a challenge.
@@ -136,13 +141,3 @@ class Phase(AccessControlledModel):
 
         # Validate and save the phase
         return self.save(phase)
-
-    def filter(self, phase, user=None):
-        keys = ['_id', 'name', 'public', 'description', 'created', 'updated',
-                'active', 'challengeId', 'folderId', 'participantGroupId',
-                'groundTruthFolderId', 'instructions']
-
-        filtered = self.filterDocument(phase, allow=keys)
-        filtered['_accessLevel'] = self.getAccessLevel(phase, user)
-
-        return filtered
